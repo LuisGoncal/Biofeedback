@@ -1,0 +1,17 @@
+biofeed\tasks.o: ..\Middlewares\Third_Party\FreeRTOS\Source\tasks.c
+biofeed\tasks.o: D:\Keil\ARM\ARMCC\Bin\..\include\stdlib.h
+biofeed\tasks.o: D:\Keil\ARM\ARMCC\Bin\..\include\string.h
+biofeed\tasks.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\FreeRTOS.h
+biofeed\tasks.o: D:\Keil\ARM\ARMCC\Bin\..\include\stddef.h
+biofeed\tasks.o: D:\Keil\ARM\ARMCC\Bin\..\include\stdint.h
+biofeed\tasks.o: ../Inc/FreeRTOSConfig.h
+biofeed\tasks.o: ../Inc/mxconstants.h
+biofeed\tasks.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\projdefs.h
+biofeed\tasks.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\portable.h
+biofeed\tasks.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\deprecated_definitions.h
+biofeed\tasks.o: ..\Middlewares\Third_Party\FreeRTOS\Source\portable\RVDS\ARM_CM4F\portmacro.h
+biofeed\tasks.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\mpu_wrappers.h
+biofeed\tasks.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\task.h
+biofeed\tasks.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\list.h
+biofeed\tasks.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\timers.h
+biofeed\tasks.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\StackMacros.h

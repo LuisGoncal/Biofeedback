@@ -1,0 +1,15 @@
+biofeed\croutine.o: ..\Middlewares\Third_Party\FreeRTOS\Source\croutine.c
+biofeed\croutine.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\FreeRTOS.h
+biofeed\croutine.o: D:\Keil\ARM\ARMCC\Bin\..\include\stddef.h
+biofeed\croutine.o: D:\Keil\ARM\ARMCC\Bin\..\include\stdint.h
+biofeed\croutine.o: ../Inc/FreeRTOSConfig.h
+biofeed\croutine.o: ../Inc/mxconstants.h
+biofeed\croutine.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\projdefs.h
+biofeed\croutine.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\portable.h
+biofeed\croutine.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\deprecated_definitions.h
+biofeed\croutine.o: ..\Middlewares\Third_Party\FreeRTOS\Source\portable\RVDS\ARM_CM4F\portmacro.h
+biofeed\croutine.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\mpu_wrappers.h
+biofeed\croutine.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\task.h
+biofeed\croutine.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\list.h
+biofeed\croutine.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\croutine.h
+biofeed\croutine.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\list.h

@@ -1,0 +1,13 @@
+biofeed\freertos.o: ..\Src\freertos.c
+biofeed\freertos.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\FreeRTOS.h
+biofeed\freertos.o: D:\Keil\ARM\ARMCC\Bin\..\include\stddef.h
+biofeed\freertos.o: D:\Keil\ARM\ARMCC\Bin\..\include\stdint.h
+biofeed\freertos.o: ../Inc/FreeRTOSConfig.h
+biofeed\freertos.o: ../Inc/mxconstants.h
+biofeed\freertos.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\projdefs.h
+biofeed\freertos.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\portable.h
+biofeed\freertos.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\deprecated_definitions.h
+biofeed\freertos.o: ..\Middlewares\Third_Party\FreeRTOS\Source\portable\RVDS\ARM_CM4F\portmacro.h
+biofeed\freertos.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\mpu_wrappers.h
+biofeed\freertos.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\task.h
+biofeed\freertos.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\list.h

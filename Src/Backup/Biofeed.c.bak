@@ -1,0 +1,597 @@
+#include "Biofeed.h"
+#include "MY_CS43L22.h"
+
+typedef struct
+{
+  uint32_t   ChunkID;       /* 0 */ 
+  uint32_t   FileSize;      /* 4 */
+  uint32_t   FileFormat;    /* 8 */
+  uint32_t   SubChunk1ID;   /* 12 */
+  uint32_t   SubChunk1Size; /* 16 */  
+  uint16_t   AudioFormat;   /* 20 */ 
+  uint16_t   NbrChannels;   /* 22 */   
+  uint32_t   SampleRate;    /* 24 */
+  
+  uint32_t   ByteRate;      /* 28 */
+  uint16_t   BlockAlign;    /* 32 */  
+  uint16_t   BitPerSample;  /* 34 */  
+  uint32_t   SubChunk2ID;   /* 36 */   
+  uint32_t   SubChunk2Size; /* 40 */    
+
+}WAVE_FormatTypeDef;
+
+typedef enum
+{
+  BUFFER_OFFSET_NONE = 0,  
+  BUFFER_OFFSET_HALF,  
+  BUFFER_OFFSET_FULL,     
+}BUFFER_StateTypeDef;
+
+
+
+// ACTUATION_INTERVALS possible values:
+// 1 - CONTREF_MAX_2 to CONTREF_MIN_2
+// 2 - CONTREF_MIN_2 to HO_RIGHT
+// 3 - HO_RIGHT to CONTREF_MIN_1
+// 4 - CONTREF_MIN_1 to CONTREF_MAX_2 
+int ACTUATION_INTERVALS[]={1,2,3,4};
+int HO_RIGHT=24;
+int CONTREF_MIN_2=5;
+int CONTREF_MIN_1=31;
+int CONTREF_MAX_2=47;
+int time_samples[7]={7,7,6,6,6,5,5};
+int RT_vib;
+int RT_vis;
+int intervals_number;
+int counter = 0;
+int counter_ = 0;
+int before_HO_vib;
+int before_HS_vib;
+int before_HO_vis;
+int before_HS_vis;
+int opposite_torque;
+int ContRef_Increase;
+int interval = 0;
+int res; // debug
+int sound=0;
+int interval_state=0;
+const uint8_t myDAC_Signal[40]={128,133,138,143,147,151,154,157,158,160,160,160,158,157,154,151,147,143,138,
+	133,128,123,118,113,109,105,102,99,98,96,96,96,98,99,102,105,109,113,118,123};
+uint16_t I2S_dummy[4];
+float ContRef_Bef=90;
+//FATFS myUsbFatFS;
+//FIL myFile;
+//WAVE_FormatTypeDef waveformat;
+//uint32_t WaveDataLength;
+//uint8_t Audio_Buffer[SIZE_BUFFER];
+//UINT bytesread;
+//int32_t AudioRemSize;
+//BUFFER_StateTypeDef buffer_offset = BUFFER_OFFSET_NONE;
+extern I2C_HandleTypeDef hi2c1;
+extern I2S_HandleTypeDef hi2s3;
+extern DAC_HandleTypeDef hdac;
+extern DMA_HandleTypeDef hdma_spi3_tx;
+extern TIM_HandleTypeDef htim6;
+extern TIM_HandleTypeDef htim9;
+extern TIM_HandleTypeDef htim13;
+//extern uint8_t retUSBH;
+//extern char USBHPath[4];
+//extern FATFS USBHFatFS;
+//extern ApplicationTypeDef Appli_state;
+extern float ContRef[];
+extern float IntTorque[];
+         
+// initializes all the necessary peripherials according to the chosen biofeedback;
+// in the case of BIOFEED 1 and 3, it is done the calibration of the drivers DRV2605L
+void BioFeed_Init() {
+	MX_GPIO_Init();
+	MX_TIM9_Init();
+	__HAL_TIM_CLEAR_FLAG(&htim9, TIM_IT_UPDATE);
+	__HAL_TIM_ENABLE_IT(&htim9, TIM_IT_UPDATE);
+	if (BIOFEED==2)
+	{
+		MX_DMA_Init();
+		MX_TIM6_Init();
+		MX_I2C1_Init();
+		MX_I2S3_Init();
+		MX_DAC_Init();
+//		MX_FATFS_Init();
+//		if (retUSBH==0)
+//		{
+//			MX_USB_HOST_Init();
+//			do {MX_USB_HOST_Process();} while (Appli_state!=APPLICATION_READY);
+//		}
+		CS43_Init(hi2c1);
+	}
+	else // BIOFEED 1 3
+	{
+		MX_I2C3_Init();
+		MX_TIM13_Init();
+		BioFeed_DRV2605L_Init();
+	}
+}
+
+// DRV2605L drivers configuration in PWM mode and calibration through pre-measured results
+void BioFeed_DRV2605L_Init() {
+	HAL_GPIO_WritePin(GPIOE, MOT_DRIVER1_Pin, GPIO_PIN_SET);  
+	HAL_GPIO_WritePin(GPIOE, MOT_DRIVER2_Pin, GPIO_PIN_SET); 
+	HAL_GPIO_WritePin(GPIOB, MOT_DRIVER3_Pin, GPIO_PIN_SET); 
+	HAL_GPIO_WritePin(GPIOB, MOT_DRIVER4_Pin, GPIO_PIN_SET); 
+	
+	//Device ready + PWM mode
+	Adafruit_DRV2605_writeRegister8(DRV2605_REG_MODE, 0x03); // STANDBY 0 MODE 3
+	
+	//Calibration through pre-measured results
+	Adafruit_DRV2605_writeRegister8(DRV2605_REG_FEEDBACK, 0x2A); // BEMF_GAIN
+	Adafruit_DRV2605_writeRegister8(DRV2605_REG_AUTOCALCOMP, 0x0B); // AUTO_CAL_BEMF
+	Adafruit_DRV2605_writeRegister8(DRV2605_REG_AUTOCALEMP, 0x7D); // AUTO_CAL_COMP
+	
+	HAL_GPIO_WritePin(GPIOE, MOT_DRIVER1_Pin, GPIO_PIN_RESET); 
+	HAL_GPIO_WritePin(GPIOE, MOT_DRIVER2_Pin, GPIO_PIN_RESET); 
+	HAL_GPIO_WritePin(GPIOB, MOT_DRIVER3_Pin, GPIO_PIN_RESET); 
+	HAL_GPIO_WritePin(GPIOB, MOT_DRIVER4_Pin, GPIO_PIN_RESET); 
+}
+
+// some parameters are calculated (before_HO_vibrotactile, before_HS_vibrotactile, before_HO_visual, before_HS_visual in BIOFEED 1 and intervals_number in BIOFEED 2 and 3):
+// before_HO_vibrotactile - sample REACTION_TIME_VIB before right leg heel-off  
+// before_HS_vibrotactile - sample REACTION_TIME_VIB before right leg heel-strike 
+// before_HO_visual - sample REACTION_TIME_VIS before right leg heel-off  
+// before_HS_visual - sample REACTION_TIME_VIS before right leg heel-strike 
+// intervals_number - number of actuation intervals (1-4)
+// in the case of BIOFEED 1 and 3, the PWM is activated;
+// in the case of BIOFEED 2, res is 1 or 0, indicating a successful start or that start failed, respectively
+// timer 9 interruption is enabled 
+void BioFeed_Start() {
+	switch (BIOFEED)
+	{
+		case 1:
+			RT_vib = REACTION_TIME_VIB/time_samples[SPEED];
+			RT_vis = REACTION_TIME_VIS/time_samples[SPEED];
+			before_HO_vib=HO_RIGHT-RT_vib;
+			before_HS_vib=REF_SAMPLES-RT_vib;
+			before_HO_vis=HO_RIGHT-RT_vis;
+			before_HS_vis=REF_SAMPLES-RT_vis;
+			BioFeed_PWM_Start();
+			break;
+		case 2:
+			intervals_number=sizeof(ACTUATION_INTERVALS)/4;
+			CS43_SetVolume(VOLUME);
+			HAL_I2S_Transmit_DMA(&hi2s3,(uint16_t*)I2S_dummy,4);
+			HAL_TIM_Base_Start(&htim6);
+			HAL_DAC_Start_DMA(&hdac,DAC1_CHANNEL_1,(uint32_t*)myDAC_Signal,40,DAC_ALIGN_8B_R);
+			HAL_Delay(1000);
+			HAL_TIM_Base_Stop(&htim6); 
+			break;
+		case 3:
+			intervals_number=sizeof(ACTUATION_INTERVALS)/4;
+			BioFeed_PWM_Start();
+			break;
+	}	
+	__HAL_TIM_ENABLE(&htim9); 
+}
+
+// timer 9 interruption is disabled
+// the vibration (EN 0 and PWM stops), light and sound is turned off according the activated biofeedback
+// the counter and interval variables are reseted
+void BioFeed_Stop() {
+	__HAL_TIM_DISABLE(&htim9);
+	switch (BIOFEED)
+	{
+		case 1:
+			BioFeed_Vibration_OFF(1);
+			BioFeed_Vibration_OFF(2);
+			BioFeed_Light_OFF(3);
+			BioFeed_Vibration_OFF(3);
+			BioFeed_Vibration_OFF(4);
+			BioFeed_Light_OFF(1);
+			BioFeed_Light_OFF(2);
+			BioFeed_PWM_Stop();
+			break;
+		case 2:
+			BioFeed_Sound_OFF();
+			HAL_DAC_Stop_DMA(&hdac,DAC1_CHANNEL_1);
+			CS43_Stop();
+			BioFeed_Light_OFF(1);
+			BioFeed_Light_OFF(2);
+			break;
+		case 3:
+			BioFeed_Vibration_OFF(1);
+			BioFeed_Vibration_OFF(2);
+			BioFeed_Light_OFF(1);
+			BioFeed_Light_OFF(2);
+			BioFeed_PWM_Stop();
+			break;
+	}
+	counter=0;
+	ContRef_Bef=90;
+	counter_=0; //debug
+}
+
+// starts the timer 13 in output PWM mode according the defined DUTY_CYCLE
+void BioFeed_PWM_Start() {
+	__HAL_TIM_SET_COMPARE(&htim13, TIM_CHANNEL_1, DUTY_CYCLE);
+	HAL_TIM_PWM_Start(&htim13, TIM_CHANNEL_1);
+}
+
+// stops the timer 13 in output PWM mode
+void BioFeed_PWM_Stop() {
+	HAL_TIM_PWM_Stop(&htim13, TIM_CHANNEL_1);
+}
+
+// sets the EN pin of the motor (1-4*) *PCB labels
+void BioFeed_Vibration_ON(int motor) {
+	switch (motor)
+	{
+		case 1:
+			HAL_GPIO_WritePin(GPIOE, MOT_DRIVER1_Pin, GPIO_PIN_SET); 
+			break;
+		case 2:
+			HAL_GPIO_WritePin(GPIOE, MOT_DRIVER2_Pin, GPIO_PIN_SET); 
+			break;
+		case 3:
+			HAL_GPIO_WritePin(GPIOB, MOT_DRIVER3_Pin, GPIO_PIN_SET); 
+			break;
+		case 4:
+			HAL_GPIO_WritePin(GPIOB, MOT_DRIVER4_Pin, GPIO_PIN_SET); 
+			break;
+	}
+}
+
+// resets the EN pin of the motor (1-4*) *PCB labels
+void BioFeed_Vibration_OFF(int motor) {
+	switch (motor)
+	{
+		case 1:
+			HAL_GPIO_WritePin(GPIOE, MOT_DRIVER1_Pin, GPIO_PIN_RESET); 
+			break;
+		case 2:
+			HAL_GPIO_WritePin(GPIOE, MOT_DRIVER2_Pin, GPIO_PIN_RESET); 
+			break;
+		case 3:
+			HAL_GPIO_WritePin(GPIOB, MOT_DRIVER3_Pin, GPIO_PIN_RESET); 
+			break;
+		case 4:
+			HAL_GPIO_WritePin(GPIOB, MOT_DRIVER4_Pin, GPIO_PIN_RESET); 
+			break;
+	}
+}
+
+// open, read and play the wav file through I2S
+void BioFeed_Sound_ON(void) {
+	if (sound==0)
+	{
+		HAL_TIM_Base_Start(&htim6);
+		sound=1;
+	}
+}
+
+void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(hi2s);
+
+  /* NOTE : This function Should not be modified, when the callback is needed,
+            the HAL_I2S_TxHalfCpltCallback could be implemented in the user file
+   */
+	if(hi2s->Instance==SPI3)
+	{
+
+	}	
+}
+
+void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(hi2s);
+
+  /* NOTE : This function Should not be modified, when the callback is needed,
+            the HAL_I2S_TxCpltCallback could be implemented in the user file
+   */
+	if(hi2s->Instance==SPI3)
+	{
+
+	}	
+}
+
+// sound is turned off and the file is closed
+void BioFeed_Sound_OFF() {
+//	AudioRemSize=0;	
+//	f_close(&myFile);
+//	f_mount(NULL, (TCHAR const*)"", 0);
+	if (sound==1)
+	{
+		HAL_TIM_Base_Stop(&htim6);
+		sound=0;
+	}
+}
+
+// turns on the LED (1-3) 1 - LED_RED; 2 - LED_GREEN; 3 - LED_BLUE
+void BioFeed_Light_ON(int LED) {
+	switch (LED)
+	{
+		case 1:
+			HAL_GPIO_WritePin(GPIOE, LED_RED_Pin, GPIO_PIN_SET);
+			break;
+		case 2:
+			HAL_GPIO_WritePin(GPIOE, LED_GREEN_Pin, GPIO_PIN_SET);
+			break;
+		case 3:
+			HAL_GPIO_WritePin(GPIOE, LED_BLUE_Pin, GPIO_PIN_SET);
+			break;
+	}
+}
+
+// turns off the LED (1-3) 1 - LED_RED; 2 - LED_GREEN; 3 - LED_BLUE
+void BioFeed_Light_OFF(int LED) {
+	switch (LED)
+	{
+		case 1:
+			HAL_GPIO_WritePin(GPIOE, LED_RED_Pin, GPIO_PIN_RESET);
+			break;
+		case 2:
+			HAL_GPIO_WritePin(GPIOE, LED_GREEN_Pin, GPIO_PIN_RESET);
+			break;
+		case 3:
+			HAL_GPIO_WritePin(GPIOE, LED_BLUE_Pin, GPIO_PIN_RESET);
+			break;
+	}
+}
+
+// Foot contact biofeedback for right, left or both legs:
+// Right leg - starts before HS and ends before HO
+// Left leg - starts before HS and ends before HO
+// Both legs - starts before HS and ends at HS of both legs 
+void BioFeed_Foot_Contact() {
+	switch (LEG)
+	{
+		case 1:
+			BioFeed_Right_Leg_User(before_HS_vib,before_HO_vib);
+			BioFeed_Right_Leg_Therapist(before_HS_vis,before_HO_vis);
+			break;
+		case 2:
+			BioFeed_Left_Leg_User(before_HO_vib,before_HS_vib);
+			BioFeed_Left_Leg_Therapist(before_HO_vis,before_HS_vis);
+			break;
+		case 3:
+			BioFeed_Right_Leg_User(before_HS_vib,REF_SAMPLES);
+			BioFeed_Right_Leg_Therapist(before_HS_vis,REF_SAMPLES);
+			BioFeed_Left_Leg_User(before_HO_vib,HO_RIGHT);
+			BioFeed_Left_Leg_Therapist(before_HO_vis,HO_RIGHT);
+			break; 
+	}
+}
+
+// Foot contact biofeedback for right leg oriented to the user: 
+// between start and end instants: right waist motors vibrate 
+// remaning gait cycle: no vibration 
+void BioFeed_Right_Leg_User (int start, int end) {
+	if (counter==start)
+	{
+		BioFeed_Vibration_ON(1);
+		BioFeed_Vibration_ON(2);
+	}
+	else if (counter==end)
+	{
+		BioFeed_Vibration_OFF(1);
+		BioFeed_Vibration_OFF(2);
+	}
+}
+
+// Foot contact biofeedback for left leg oriented to the user: 
+// between start and end instants: left waist motors vibrate 
+// remaning gait cycle: no vibration 
+void BioFeed_Left_Leg_User (int start, int end) {
+	if (counter==start)
+	{
+		BioFeed_Vibration_ON(3);
+		BioFeed_Vibration_ON(4);
+	}
+	else if (counter==end)
+	{
+		BioFeed_Vibration_OFF(3);
+		BioFeed_Vibration_OFF(4);
+	}
+}
+
+// Foot contact biofeedback for right leg oriented to the therapist: 
+// between start and end instants: blue light is on
+// remaning gait cycle: no light
+void BioFeed_Right_Leg_Therapist (int start, int end) {
+	if (counter==start)
+	{
+		BioFeed_Light_ON(3); 
+	}
+	else if (counter==end)
+	{
+		BioFeed_Light_OFF(3); 
+	}
+}
+
+// Foot contact biofeedback for left leg oriented to the therapist: 
+// between start and end instants: pink light is on
+// remaning gait cycle: no light
+void BioFeed_Left_Leg_Therapist (int start, int end) {
+	if (counter==start)
+	{
+		BioFeed_Light_ON(1); 
+		BioFeed_Light_ON(3); 
+	}
+	else if (counter==end)
+	{
+		BioFeed_Light_OFF(1); 
+		BioFeed_Light_OFF(3); 
+	}
+}
+
+// Joint motion biofeedback runs only during ACTUATION_INTERVALS
+// if the orthosis and user move in opposite direction, the sound is generated and red light is on
+// if the orthosis and user move in the same direction, there is no sound and green light is on 
+void BioFeed_Joint_Motion() {
+	BioFeed_Interval_Identification();
+	int i=0;
+	interval_state=0;
+	while (i<intervals_number) 
+	{
+		if (interval == ACTUATION_INTERVALS[i]) 
+		{
+			BioFeed_Opposite_Torque();
+			switch (opposite_torque)
+			{
+				case 0:
+					BioFeed_Light_OFF(1); // therapist oriented strategy
+					BioFeed_Light_ON(2); // therapist oriented strategy
+					BioFeed_Sound_OFF();
+					break;
+				case 1:
+					BioFeed_Light_OFF(2); // therapist oriented strategy
+					BioFeed_Light_ON(1); // therapist oriented strategy
+					BioFeed_Sound_ON();
+					break;
+			}
+			interval_state=1;
+		}
+		i=i+1;
+	}
+	if (interval_state==0)
+	{
+		BioFeed_Light_OFF(1);
+		BioFeed_Light_OFF(2);
+		BioFeed_Sound_OFF();
+	}
+}
+
+// indicates if the user moves in the same (opposite_torque=0) or in opposite (opposite_torque=1) direction relative to orthosis 
+// opposite direction happens when:
+// the angle increases and the interaction torque is higher than THRESHOLD
+// the angle decreases and the interaction torque is lower than -THRESHOLD 
+void BioFeed_Opposite_Torque() {
+	switch (ContRef_Increase)
+	{
+		case 0:
+			// if (IntTorque < -THRESHOLD) {opposite_torque=1;}
+			if (IntTorque[counter_-1] < -THRESHOLD) 
+			{
+				opposite_torque=1;
+			} //debug
+			else {opposite_torque=0;}
+			break;
+		case 1:
+			// if (IntTorque > THRESHOLD) {opposite_torque=1;}
+			if (IntTorque[counter_-1] > THRESHOLD) 
+			{
+				opposite_torque=1;
+			} //debug
+			else {opposite_torque=0;}
+			break;
+	}
+}
+
+// identification of the interval which the orthosis runs (1-4) and its behavior through ContRef_Increase (0 if angle increases or 1 if angle decreases) 
+// interval | meaning                        | ContRef_Increase 
+// 1        | CONTREF_MAX_2 to CONTREF_MIN_2 | 0 
+// 2        | CONTREF_MIN_2 to HO_RIGHT      | 1 
+// 3        | HO_RIGHT to CONTREF_MIN_1      | 0 
+// 4        | CONTREF_MIN_1 to CONTREF_MAX_2 | 1 
+// restriction: this code considers that the reference trajectory starts at heel-strike
+void BioFeed_Interval_Identification() {
+	if (counter <= CONTREF_MIN_2 || counter > CONTREF_MAX_2)
+	{
+		interval = 1;
+		ContRef_Increase=0;
+	}
+	else if (counter > CONTREF_MIN_2 && counter <= HO_RIGHT)
+	{
+		interval = 2;
+		ContRef_Increase=1;
+	}
+	else if (counter > HO_RIGHT && counter <= CONTREF_MIN_1)
+	{
+		interval = 3;
+		ContRef_Increase=0;
+	}
+	else //(counter > CONTREF_MIN_1 && counter <= CONTREF_MAX_2)
+	{
+		interval = 4;
+		ContRef_Increase=1;
+	}
+}
+
+// User participation biofeedback runs only during ACTUATION_INTERVALS and if the user and orthosis move in the same direction
+// if the interaction torque is out of the target interval (-USER_THRESHOLD to USER_THRESHOLD), red light is on and a vibration motor is activated:
+// if the interval is 1 or 3: motor 2 is activated (shank back)
+// if the interval is 2 ou 4: motor 1 is activated (shank front)
+// if the interaction torque is inside of the target interval, there is no vibration and green light is on
+void BioFeed_User_Participation() {
+	BioFeed_Interval_Identification();
+	int i = 0;
+	interval_state=0;
+	while (i<intervals_number)
+	{
+		if (interval == ACTUATION_INTERVALS[i])
+		{	
+			BioFeed_Opposite_Torque();
+			//if (opposite_torque==0 && (IntTorque > USER_THRESHOLD || IntTorque < -USER_THRESHOLD))
+			if (opposite_torque==0 && (IntTorque[counter_-1] > USER_THRESHOLD || IntTorque[counter_-1] < -USER_THRESHOLD)) //debug
+			{
+				if (interval==1 || interval==3)
+				{
+					BioFeed_Light_OFF(2); // therapist-oriented strategy
+					BioFeed_Light_ON(1); // therapist-oriented strategy
+					BioFeed_Vibration_ON(2);
+				}
+				else //(interval==2 || interval==4)
+				{
+					BioFeed_Light_OFF(2); // therapist-oriented strategy
+					BioFeed_Light_ON(1); // therapist-oriented strategy
+					BioFeed_Vibration_ON(1);
+				}
+			}
+			else
+			{
+				BioFeed_Light_OFF(1); // therapist-oriented strategy
+				BioFeed_Light_ON(2); // therapist-oriented strategy
+				BioFeed_Vibration_OFF(1);
+				BioFeed_Vibration_OFF(2);
+			}
+			interval_state=1;
+		}
+		i=i+1;
+	}
+	if (interval_state==0)
+	{
+		BioFeed_Light_OFF(1); // therapist-oriented strategy
+		BioFeed_Light_OFF(2); // therapist-oriented strategy
+		BioFeed_Vibration_OFF(1);
+		BioFeed_Vibration_OFF(2);
+	}
+}
+
+// timer 9 interruption:
+// updates the counter and synchronizes it according orthosis reference trajectory 
+// executes the chosen BIOFEED
+// the counter resets at gait cycle end
+void BioFeed_Timer9_Interruption() {
+	counter_=counter_+1; //debug
+	if (ContRef[counter_-1] != ContRef_Bef)
+	{
+		counter=counter+1;
+		ContRef_Bef=ContRef[counter_-1];
+	}
+	switch (BIOFEED)
+	{
+		case 1:
+			BioFeed_Foot_Contact();
+			break;
+		case 2:
+			BioFeed_Joint_Motion();
+			break;
+		case 3:
+			BioFeed_User_Participation();
+			break;
+	}
+	if (counter==REF_SAMPLES) 
+	{
+		counter=1;
+	}
+	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_11); // debug
+}

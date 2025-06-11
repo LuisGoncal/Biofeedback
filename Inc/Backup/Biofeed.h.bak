@@ -1,0 +1,74 @@
+#include "stm32f4xx_hal.h"
+#include "main.h"
+#include "dac.h"
+#include "dma.h"
+#include "fatfs.h"
+#include "i2c.h"
+#include "i2s.h"
+#include "tim.h"
+#include "usart.h"
+#include "usb_host.h"
+#include "gpio.h"
+#include "stm32f4xx_it.h"
+#include "Adafruit_DRV2605.h" 
+#include <stdbool.h>
+#include <math.h>
+
+// UPDATE ALWAYS 
+#define BIOFEED 2 // FOOT CONTACT 1 JOINT MOTION 2 USER PARTICIPATION 3
+#define SPEED 6 // 0 - 1.0; 1 - 1.1; 2 - 1.2; 3 - 1.3; 4 - 1.4; 5 - 1.5; 6 - 1.6 km/h
+#define HS_RIGHT 1 // heel strike sample
+#define REF_SAMPLES 49 // total number of samples reference trajectory (last sample equal to first sample)
+// UPDATE ON BIOFEED 1: A C D
+// UPDATE ON BIOFEED 2: B E H I J K
+// UPDATE ON BIOFEED 3: A E F H
+
+#define DUTY_CYCLE 0x7530 						// (A) equal to timer counter period <=> 2.9 V output <=> 200 Hz 1.8 G for motor model 310-122 from Precison Microdrives
+#define VOLUME 30 										// (B) 0-100
+#define LEG 1 												// (C) RIGHT LEG 1 LEFT LEG 2 BOTH LEGS 3
+#define REACTION_TIME_VIB 25 					// (D) 25 samples <=> 250 miliseconds; vibrotactile stimulus
+#define REACTION_TIME_VIS 25 					// (D) 25 samples <=> 250 miliseconds; visual stimulus
+#define THRESHOLD 1.5 								// (E) interaction torque target interval: -THRESHOLD Nm to THRESHOLD Nm
+#define USER_THRESHOLD 11 						// (F) interaction torque target interval according user performance in a baseline trial: - USER_THRESHOLD Nm to USER_THRESHOLD Nm														
+//#define WAV_NAME "audio.wav" 					// (I) audio file name (max 11 characteres)
+//#define SIZE_BUFFER 4096 							// (K) sampling frequency * 0,01 * 2 (16 bits => 8 bits) * 2 (2 channels) => i2s interruption period 10 ms 
+																			// (H) ACTUATION_INTERVAL in Biofeed.c! 
+																			// (J) SAMPLING_FREQUENCY 44100 Hz below!
+
+// in order to change the sampling frequency:
+// change hi2s3.Init.AudioFreq
+// change PeriphClkInitStruct.PLLI2S.PLLI2SN and PeriphClkInitStruct.PLLI2S.PLLI2SR
+// SAMPLING_FREQUENCY | PLLI2SN | PLLI2SR
+// 8000								| 256			| 2
+// 16000							| 213			| 2
+// 22050 							| 429			| 4
+// 44100							| 271			| 2
+// 48000							| 258			| 3
+// Audio wav file features: 16 bits; PCM; SAMPLING_FREQUENCY (8000, 11025, 16000, 22050, 44100, 48000 Hz)
+
+// RUN: INIT -> START -> STOP
+
+void BioFeed_Init(void);
+void BioFeed_DRV2605L_Init(void);
+void BioFeed_Start(void);
+void BioFeed_Stop(void);
+void BioFeed_PWM_Start(void);
+void BioFeed_PWM_Stop(void);
+void BioFeed_Sound_Start(void);
+void BioFeed_Vibration_ON(int motor);
+void BioFeed_Vibration_OFF(int motor);
+void BioFeed_Sound_ON(void);
+void BioFeed_Sound_OFF(void);
+void BioFeed_Light_ON(int LED); 
+void BioFeed_Light_OFF(int LED); 
+void BioFeed_Foot_Contact(void);
+void BioFeed_Right_Leg_User(int start, int end);
+void BioFeed_Left_Leg_User(int start, int end);
+void BioFeed_Right_Leg_Therapist(int start, int end);
+void BioFeed_Left_Leg_Therapist(int start, int end);
+void BioFeed_Joint_Motion(void);
+void BioFeed_Opposite_Torque(void);
+void BioFeed_Interval_Identification(void);
+void BioFeed_User_Participation(void);
+void BioFeed_Synchronization(void);
+void BioFeed_Timer9_Interruption (void);

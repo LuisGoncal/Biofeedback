@@ -1,0 +1,16 @@
+biofeed\event_groups.o: ..\Middlewares\Third_Party\FreeRTOS\Source\event_groups.c
+biofeed\event_groups.o: D:\Keil\ARM\ARMCC\Bin\..\include\stdlib.h
+biofeed\event_groups.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\FreeRTOS.h
+biofeed\event_groups.o: D:\Keil\ARM\ARMCC\Bin\..\include\stddef.h
+biofeed\event_groups.o: D:\Keil\ARM\ARMCC\Bin\..\include\stdint.h
+biofeed\event_groups.o: ../Inc/FreeRTOSConfig.h
+biofeed\event_groups.o: ../Inc/mxconstants.h
+biofeed\event_groups.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\projdefs.h
+biofeed\event_groups.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\portable.h
+biofeed\event_groups.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\deprecated_definitions.h
+biofeed\event_groups.o: ..\Middlewares\Third_Party\FreeRTOS\Source\portable\RVDS\ARM_CM4F\portmacro.h
+biofeed\event_groups.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\mpu_wrappers.h
+biofeed\event_groups.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\task.h
+biofeed\event_groups.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\list.h
+biofeed\event_groups.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\timers.h
+biofeed\event_groups.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\event_groups.h

@@ -1,0 +1,16 @@
+biofeed\queue.o: ..\Middlewares\Third_Party\FreeRTOS\Source\queue.c
+biofeed\queue.o: D:\Keil\ARM\ARMCC\Bin\..\include\stdlib.h
+biofeed\queue.o: D:\Keil\ARM\ARMCC\Bin\..\include\string.h
+biofeed\queue.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\FreeRTOS.h
+biofeed\queue.o: D:\Keil\ARM\ARMCC\Bin\..\include\stddef.h
+biofeed\queue.o: D:\Keil\ARM\ARMCC\Bin\..\include\stdint.h
+biofeed\queue.o: ../Inc/FreeRTOSConfig.h
+biofeed\queue.o: ../Inc/mxconstants.h
+biofeed\queue.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\projdefs.h
+biofeed\queue.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\portable.h
+biofeed\queue.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\deprecated_definitions.h
+biofeed\queue.o: ..\Middlewares\Third_Party\FreeRTOS\Source\portable\RVDS\ARM_CM4F\portmacro.h
+biofeed\queue.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\mpu_wrappers.h
+biofeed\queue.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\task.h
+biofeed\queue.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\list.h
+biofeed\queue.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\queue.h

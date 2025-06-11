@@ -1,0 +1,243 @@
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * @file           : main.c
+  * @brief          : Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  * All rights reserved.</center></h2>
+  *
+  * This software component is licensed by ST under BSD 3-Clause license,
+  * the "License"; You may not use this file except in compliance with the
+  * License. You may obtain a copy of the License at:
+  *                        opensource.org/licenses/BSD-3-Clause
+  *
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+
+/* Includes ------------------------------------------------------------------*/
+#include "main.h"
+#include "usart.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include "Biofeed.h"
+
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+
+/* USER CODE BEGIN PV */
+float ContRef[]={2.18,	2.18,	2.18,	2.18,	2.18,	0.74,	0.74,	0.74,	0.74,	0.74,	-0.69,	-0.69,	-0.69,	-0.69,	-0.69,	-1.75,	-1.75,	-1.75,	
+	-1.75,	-1.75,	-2,	-2,	-2,	-2,	-2,	-1.5,	-1.5,	-1.5,	-1.5,	-1.5,	-1.5,	-1,	-1,	-1,	-1,	-1,	-0.31,	-0.31,	-0.31,	-0.31,	-0.31,	1.03,	1.03,	
+	1.03,	1.03,	1.03,	2.16,	2.16,	2.16,	2.16,	2.16,	2.98,	2.98,	2.98,	2.98,	2.98,	3.2,	3.2,	3.2,	3.2,	3.2,	3.73,	3.73,	3.73,	3.73,	3.73,	4.26,	
+	4.26,	4.26,	4.26,	4.26,	4.3,	4.3,	4.3,	4.3,	4.3,	4.3,	4.8,	4.8,	4.8,	4.8,	4.8,	5.4,	5.4,	5.4,	5.4,	5.4,	5.88,	5.88,	5.88,	5.88,	
+	5.88,	7.01,	7.01,	7.01,	7.01,	7.01,	8.09,	8.09,	8.09,	8.09,	8.09,	9.27,	9.27,	9.27,	9.27,	9.27,	10.72,	10.72,	10.72,	10.72,	10.72,	11.51,	
+	11.51,	11.51,	11.51,	11.51,	12,	12,	12,	12,	12,	11.81,	11.81,	11.81,	11.81,	11.81,	11.81,	10.27,	10.27,	10.27,	10.27,	10.27,	7.21,	
+	7.21,	7.21,	7.21,	7.21,	1.86,	1.86,	1.86,	1.86,	1.86,	-4.57,	-4.57,	-4.57,	-4.57,	-4.57,	-9.34,	-9.34,	-9.34,	-9.34,	-9.34,	-11.06,	
+	-11.06,	-11.06,	-11.06,	-11.06,	-10.38,	-10.38,	-10.38,	-10.38,	-10.38,	-8.38,	-8.38,	-8.38,	-8.38,	-8.38,	-6.82,	-6.82,	-6.82,	-6.82,	
+	-6.82,	-4.19,	-4.19,	-4.19,	-4.19,	-4.19,	-4.19,	-2,	-2,	-2,	-2,	-2,	-0.81,	-0.81,	-0.81,	-0.81,	-0.81,	0.25,	0.25,	0.25,	0.25,	0.25,	
+	0.94,	0.94,	0.94,	0.94,	0.94,	1.34,	1.34,	1.34,	1.34,	1.34,	1.66,	1.66,	1.66,	1.66,	1.66,	2.08,	2.08,	2.08,	2.08,	2.08,	2.66,	2.66,	2.66,	2.66,	
+	2.66,	3.38,	3.38,	3.38,	3.38,	3.38,	4.09,	4.09,	4.09,	4.09,	4.09,	4.09,	4.55,	4.55,	4.55,	4.55,	4.55,	5.11,	5.11,	5.11,	5.11,	5.11,	4.86,	4.86,	
+	4.86,	4.86,	4.86,	2.18,	2.18,	2.18,	2.18,	2.18,	0.74,	0.74,	0.74,	0.74,	0.74,	-0.69,	-0.69,	-0.69,	-0.69,	-0.69,	-1.75,	-1.75,	-1.75,	
+	-1.75,	-1.75,	-2,	-2,	-2,	-2,	-2,	-1.5,	-1.5,	-1.5,	-1.5,	-1.5,	-1,	-1,	-1,	-1,	-1,	-1,	-0.31,	-0.31,	-0.31,	-0.31,	-0.31,	1.03,	1.03,	1.03,	
+	1.03,	1.03,	2.16,	2.16,	2.16,	2.16,	2.16,	2.98,	2.98,	2.98,	2.98,	2.98,	3.2,	3.2,	3.2,	3.2,	3.2,	3.73,	3.73,	3.73,	3.73,	3.73,	4.26,	4.26,	
+	4.26,	4.26,	4.26,	4.3,	4.3,	4.3,	4.3,	4.3,	4.8,	4.8,	4.8,	4.8,	4.8,	5.4,	5.4,	5.4,	5.4,	5.4,	5.4,	5.88,	5.88,	5.88,	5.88,	5.88,	
+	7.01,	7.01,	7.01,	7.01,	7.01,	8.09,	8.09,	8.09,	8.09,	8.09,	9.27,	9.27,	9.27,	9.27,	9.27,	10.72,	10.72,	10.72,	10.72,	10.72,	11.51,	11.51,	
+	11.51,	11.51,	11.51,	12,	12,	12,	12,	12,	11.81,	11.81,	11.81,	11.81,	11.81,	10.27,	10.27,	10.27,	10.27,	10.27,	7.21,	7.21,	7.21,	7.21,	
+	7.21,	7.21,	1.86,	1.86,	1.86,	1.86,	1.86,	-4.57,	-4.57,	-4.57,	-4.57,	-4.57,	-9.34,	-9.34,	-9.34,	-9.34,	-9.34,	-11.06,	-11.06,	-11.06,	
+	-11.06,	-11.06,	-10.38,	-10.38,	-10.38,	-10.38,	-10.38,	-8.38,	-8.38,	-8.38,	-8.38,	-8.38,	-6.82,	-6.82,	-6.82,	-6.82,	-6.82,	-4.19,	
+	-4.19,	-4.19,	-4.19,	-4.19,	-2,	-2,	-2,	-2,	-2,	-0.81,	-0.81,	-0.81,	-0.81,	-0.81,	-0.81,	0.25,	0.25,	0.25,	0.25,	0.25,	0.94,	0.94,	0.94,	
+	0.94,	0.94,	1.34,	1.34,	1.34,	1.34,	1.34,	1.66,	1.66,	1.66,	1.66,	1.66,	2.08,	2.08,	2.08,	2.08,	2.08,	2.66,	2.66,	2.66,	2.66,	2.66,	3.38,	3.38,	
+	3.38,	3.38,	3.38,	4.09,	4.09,	4.09,	4.09,	4.09,	4.55,	4.55,	4.55,	4.55,	4.55,	5.11,	5.11,	5.11,	5.11,	5.11,	5.11,	4.86,	4.86,	4.86,	4.86,	4.86};
+float IntTorque[]={-2.59,	-2,	-1.39,	-0.8,	-0.2,	0.3,	0.69,	1.1,	1.29,	1.6,	1.79,	2.2,	2.59,	3,	3.4,	3.7,	4.09,	4.3,	4.4,	4.5,	4.3,	
+	4.09,	3.79,	3.5,	3.2,	3,	2.79,	2.59,	2.2,	1.79,	1.2,	0.5,	-0.4,	-1.5,	-2.79,	-4.19,	-5.59,	-6.9,	-8.1,	-9.1,	-10,	-10.8,	-11.5,	
+	-12.1,	-12.6,	-13,	-13.3,	-13.69,	-13.89,	-14.1,	-14.19,	-14.19,	-14.1,	-13.8,	-13.6,	-13.3,	-13,	-12.69,	-12.39,	-12.1,	-11.8,	
+	-11.69,	-11.5,	-11.39,	-11.1,	-10.8,	-10.39,	-10,	-9.6,	-9.3,	-8.89,	-8.6,	-8.3,	-8.19,	-8.1,	-8.1,	-8.1,	-8,	-7.8,	-7.59,	-7.19,	-6.9,	
+	-6.59,	-6.3,	-6.09,	-5.8,	-5.8,	-5.8,	-5.9,	-6,	-6,	-6,	-5.8,	-5.59,	-5.4,	-5.09,	-4.9,	-4.69,	-4.5,	-4.4,	-4.4,	-4.4,	-4.5,	-4.59,	-4.5,	
+	-4.3,	-4.09,	-3.9,	-3.7,	-3.4,	-3.09,	-2.9,	-2.7,	-2.7,	-2.7,	-2.7,	-2.7,	-2.59,	-2.29,	-2,	-1.6,	-1.2,	-0.8,	-0.4,	0,	0.2,	0.5,	0.69,	
+	0.8,	0.89,	1.1,	1.39,	1.7,	2.2,	2.59,	3.2,	3.59,	3.9,	4.09,	4.19,	4.09,	4,	3.79,	3.79,	3.79,	3.79,	3.79,	3.9,	3.79,	3.59,	3.29,	2.9,	
+	2.5,	2.29,	2.2,	2.09,	2,	2,	2,	2,	2,	1.89,	1.7,	1.5,	1.2,	0.89,	0.5,	0.1,	-0.3,	-0.69,	-1.1,	-1.39,	-1.79,	-2.09,	-2.5,	-2.9,	
+	-3.2,	-3.5,	-3.7,	-3.9,	-4.19,	-4.59,	-4.9,	-5.19,	-5.4,	-5.69,	-5.9,	-6.19,	-6.5,	-6.8,	-7.19,	-7.59,	-8.1,	-8.5,	-8.8,	-9.1,	-9.19,	
+	-9.19,	-9.1,	-9.1,	-8.89,	-8.8,	-8.69,	-8.5,	-8.3,	-8.19,	-8.3,	-8.3,	-8.3,	-8.3,	-8.1,	-7.8,	-7.5,	-7.19,	-6.9,	-6.59,	-6.3,	-6.09,	-6,	
+	-6,	-6,	-6.09,	-6.09,	-5.9,	-5.69,	-5.4,	-5.09,	-4.9,	-4.59,	-4.5,	-4.3,	-4.19,	-4.09,	-4.19,	-4.19,	-4.19,	-4.19,	-4,	-3.79,	-3.5,	
+	-3.29,	-3,	-2.79,	-2.4,	-2,	-1.6,	-1.2,	-0.8,	-0.2,	0.3,	1.1,	1.89,	2.7,	3.4,	4.09,	4.69,	5.09,	5.4,	5.5,	5.4,	5.19,	5.09,	4.9,	4.9,	
+	4.8,	4.69,	4.5,	4.3,	4.09,	3.7,	3.29,	2.59,	1.79,	0.89,	0,	-1.1,	-2.09,	-3.09,	-4.19,	-5.19,	-6.19,	-7.19,	-8.19,	-9.19,	-10.19,	
+	-11.19,	-12.1,	-13,	-13.69,	-14.3,	-14.69,	-15,	-15.1,	-15.1,	-15.1,	-14.89,	-14.8,	-14.6,	-14.39,	-14.3,	-14.19,	-14,	-13.8,	-13.39,	
+	-13.1,	-12.69,	-12.3,	-11.8,	-11.39,	-11.1,	-10.69,	-10.5,	-10.39,	-10.3,	-10.3,	-10.1,	-9.89,	-9.6,	-9.3,	-8.89,	-8.5,	-8.19,	-7.9,	
+	-7.59,	-7.4,	-7.3,	-7.3,	-7.3,	-7.19,	-7.09,	-6.8,	-6.5,	-6.19,	-5.9,	-5.59,	-5.3,	-5,	-4.8,	-4.69,	-4.69,	-4.69,	-4.8,	-4.69,	-4.5,	-4.3,	
+	-4,	-3.7,	-3.5,	-3.2,	-3,	-2.9,	-2.9,	-2.9,	-3,	-3,	-2.9,	-2.7,	-2.5,	-2.09,	-1.79,	-1.5,	-1.2,	-0.89,	-0.6,	-0.4,	-0.3,	-0.3,	-0.2,	-0.1,	0.1,	
+	0.4,	0.8,	1.2,	1.5,	1.79,	2.2,	2.4,	2.59,	2.59,	2.59,	2.5,	2.59,	2.9,	3.2,	3.4,	3.7,	3.9,	4.09,	4.19,	4.09,	3.9,	3.7,	3.59,	3.4,	3.2,	
+	3,	2.9,	2.79,	2.7,	2.5,	2.2,	1.89,	1.5,	1.1,	0.8,	0.69,	0.69,	0.8,	0.89,	1,	1.1,	1.1,	1,	0.8,	0.6,	0.2,	-0.2,	-0.89,	-1.5,	-2.09,	
+	-2.59,	-3,	-3.09,	-3.09,	-2.9,	-2.9,	-2.79,	-2.9,	-3.09,	-3.4,	-3.79,	-4.3,	-4.9,	-5.3,	-5.69,	-6,	-6.19,	-6.4,	-6.5,	-6.69,	-6.8,	-6.9,	
+	-7.19,	-7.4,	-7.8,	-8.1,	-8.39,	-8.5,	-8.5,	-8.5,	-8.39,	-8.3,	-8.19,	-8,	-7.9,	-7.69,	-7.69,	-7.69,	-7.69,	-7.69,	-7.59,	-7.5,	-7.19,	
+	-6.9,	-6.59,	-6.19,	-5.9,	-5.59,	-5.3,	-5.09,	-5.09,	-5.09,	-5.19,	-5.19,	-5.09,	-4.9,	-4.69,	-4.5,	-4.3,	-4.09,	-3.9,	-3.7,	-3.5,	-3.5,
+	-3.5,	-3.59,	-3.59,	-3.59,	-3.5,	-3.29};
+uint8_t debug2;
+// float ContRef=90;
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);
+
+/* USER CODE BEGIN PFP */
+
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+
+/* USER CODE END 0 */
+
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void)
+{
+  /* USER CODE BEGIN 1 */
+
+  /* USER CODE END 1 */
+  
+
+  /* MCU Configuration--------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* Configure the system clock */
+  SystemClock_Config();
+
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
+  MX_USART2_UART_Init();
+  /* USER CODE BEGIN 2 */
+	BioFeed_Init();
+	BioFeed_Start();
+  /* USER CODE END 2 */
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+//		HAL_UART_Receive(&huart2, &debug2, 1, 1000);
+//		if (debug2==0x01)
+//		{
+//			BioFeed_Stop();
+//		}
+  }
+  /* USER CODE END 3 */
+}
+
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
+void SystemClock_Config(void)
+{
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+
+  /** Configure the main internal regulator output voltage 
+  */
+  __HAL_RCC_PWR_CLK_ENABLE();
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+  /** Initializes the CPU, AHB and APB busses clocks 
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM = 8;
+  RCC_OscInitStruct.PLL.PLLN = 336;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ = 7;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Initializes the CPU, AHB and APB busses clocks 
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV4;
+
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_I2S;
+  PeriphClkInitStruct.PLLI2S.PLLI2SN = 256;
+  PeriphClkInitStruct.PLLI2S.PLLI2SR = 2;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+/* USER CODE BEGIN 4 */
+	
+/* USER CODE END 4 */
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+
+  /* USER CODE END Error_Handler_Debug */
+}
+
+#ifdef  USE_FULL_ASSERT
+/**
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
+void assert_failed(uint8_t *file, uint32_t line)
+{ 
+  /* USER CODE BEGIN 6 */
+  /* User can add his own implementation to report the file name and line number,
+     tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* USER CODE END 6 */
+}
+#endif /* USE_FULL_ASSERT */
+
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

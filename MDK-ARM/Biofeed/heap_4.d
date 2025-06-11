@@ -1,0 +1,14 @@
+biofeed\heap_4.o: ..\Middlewares\Third_Party\FreeRTOS\Source\portable\MemMang\heap_4.c
+biofeed\heap_4.o: D:\Keil\ARM\ARMCC\Bin\..\include\stdlib.h
+biofeed\heap_4.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\FreeRTOS.h
+biofeed\heap_4.o: D:\Keil\ARM\ARMCC\Bin\..\include\stddef.h
+biofeed\heap_4.o: D:\Keil\ARM\ARMCC\Bin\..\include\stdint.h
+biofeed\heap_4.o: ../Inc/FreeRTOSConfig.h
+biofeed\heap_4.o: ../Inc/mxconstants.h
+biofeed\heap_4.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\projdefs.h
+biofeed\heap_4.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\portable.h
+biofeed\heap_4.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\deprecated_definitions.h
+biofeed\heap_4.o: ..\Middlewares\Third_Party\FreeRTOS\Source\portable\RVDS\ARM_CM4F\portmacro.h
+biofeed\heap_4.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\mpu_wrappers.h
+biofeed\heap_4.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\task.h
+biofeed\heap_4.o: ..\Middlewares\Third_Party\FreeRTOS\Source\include\list.h
